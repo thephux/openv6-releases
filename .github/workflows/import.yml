@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      SRC: synthcoz/openv6
+      SRC: thephux/openv6
       TAG: ${{ inputs.tag || 'v0.7.0' }}
       FROM_BRANCH: ${{ startsWith(github.ref_name, 'import/') }}
     steps:
@@ -36,7 +36,7 @@ jobs:
 
           **Ubuntu / Debian / Zorin:**
           ```bash
-          curl -fsSL https://raw.githubusercontent.com/synthcoz/openv6-releases/main/install.sh | sudo bash
+          curl -fsSL https://raw.githubusercontent.com/thephux/openv6-releases/main/install.sh | sudo bash
           ```
           or download the `.deb` and run `sudo apt install ./openv6_*.deb`.
 
