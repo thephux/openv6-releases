@@ -1,0 +1,44 @@
+name: import release
+# Copies a release (installers, SHA256SUMS, signature) from the source
+# repository into this public one. Runs on push of this file or by hand.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/import.yml']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: release tag to import
+        default: v0.7.0
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SRC: synthcoz/openv6
+      TAG: ${{ inputs.tag || 'v0.7.0' }}
+    steps:
+      - name: Import
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then echo "$TAG already here"; exit 0; fi
+          mkdir out && cd out
+          gh release download "$TAG" --repo "$SRC"
+          sha256sum -c SHA256SUMS --ignore-missing
+          ls -la
+          cat > ../notes.md <<'NOTES'
+          **Windows 10/11:** download `openv6-setup-windows-amd64.exe`, run it and click Next. If Windows shows "Unknown publisher", choose *More info → Run anyway*.
+
+          **macOS:** download `openv6-macos.pkg`. The first time, right-click → *Open*.
+
+          **Ubuntu / Debian / Zorin:**
+          ```bash
+          curl -fsSL https://raw.githubusercontent.com/synthcoz/openv6-releases/main/install.sh | sudo bash
+          ```
+          or download the `.deb` and run `sudo apt install ./openv6_*.deb`.
+
+          Website: https://thephuc.xyz/openv6/
+          NOTES
+          sed -i 's/^          //' ../notes.md
+          gh release create "$TAG" * --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file ../notes.md
