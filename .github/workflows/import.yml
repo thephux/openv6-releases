@@ -3,8 +3,7 @@ name: import release
 # repository into this public one. Runs on push of this file or by hand.
 on:
   push:
-    branches: [main]
-    paths: ['.github/workflows/import.yml']
+    branches: ['import/*'] # a branch holding the release files (removed afterwards)
   workflow_dispatch:
     inputs:
       tag:
@@ -19,12 +18,15 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SRC: synthcoz/openv6
       TAG: ${{ inputs.tag || 'v0.7.0' }}
+      FROM_BRANCH: ${{ startsWith(github.ref_name, 'import/') }}
     steps:
+      - uses: actions/checkout@v4
+        if: startsWith(github.ref_name, 'import/')
       - name: Import
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then echo "$TAG already here"; exit 0; fi
           mkdir out && cd out
-          gh release download "$TAG" --repo "$SRC"
+          if [ "$FROM_BRANCH" = true ]; then cp ../release/* .; else gh release download "$TAG" --repo "$SRC"; fi
           sha256sum -c SHA256SUMS --ignore-missing
           ls -la
           cat > ../notes.md <<'NOTES'
@@ -41,4 +43,4 @@ jobs:
           Website: https://thephuc.xyz/openv6/
           NOTES
           sed -i 's/^          //' ../notes.md
-          gh release create "$TAG" * --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file ../notes.md
+          gh release create "$TAG" * --repo "$GITHUB_REPOSITORY" --target main --title "$TAG" --notes-file ../notes.md
